@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>シンプルカウンター - サポート</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 2.5em;
+        }
+        h2 {
+            color: #555;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+        p, li {
+            margin-bottom: 10px;
+            color: #666;
+        }
+        ul {
+            margin-left: 20px;
+            margin-bottom: 20px;
+        }
+        .contact {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+        }
+        .contact a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .contact a:hover {
+            text-decoration: underline;
+        }
+        .feature-list {
+            list-style: none;
+            margin-left: 0;
+        }
+        .feature-list li {
+            padding-left: 25px;
+            position: relative;
+            margin-bottom: 15px;
+        }
+        .feature-list li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #667eea;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>シンプルカウンター</h1>
+        <p>シンプルで使いやすいカウンターアプリです。タップするだけで簡単に数を数えられます。</p>
+
+        <h2>主な機能</h2>
+        <ul class="feature-list">
+            <li>タップするだけでカウントアップ</li>
+            <li>リセットボタンでカウントをゼロに戻せます</li>
+            <li>シンプルで直感的なデザイン</li>
+            <li>広告なし、完全無料</li>
+        </ul>
+
+        <h2>使い方</h2>
+        <ul>
+            <li>画面中央の「+」ボタンをタップするとカウントが増えます</li>
+            <li>「リセット」ボタンをタップするとカウントが0に戻ります</li>
+        </ul>
+
+        <h2>よくある質問</h2>
+        <h3>Q: カウントの数値を保存できますか？</h3>
+        <p>A: 現在のバージョンでは、アプリを閉じるとカウントはリセットされます。</p>
+
+        <h3>Q: マイナスのカウントはできますか？</h3>
+        <p>A: 現在のバージョンでは、0以上のカウントのみ対応しています。</p>
+
+        <h3>Q: 広告は表示されますか？</h3>
+        <p>A: いいえ、このアプリは完全無料で広告も一切表示されません。</p>
+
+        <div class="contact">
+            <h2>お問い合わせ</h2>
+            <p>ご質問やご要望がございましたら、GitHubのIssuesページよりお問い合わせください。</p>
+            <p><a href="https://github.com/yzak/simple-counter-app/issues" target="_blank">GitHub Issues</a></p>
+        </div>
+
+        <div class="contact" style="margin-top: 20px;">
+            <h2>プライバシーポリシー</h2>
+            <p>プライバシーポリシーは<a href="privacy.html">こちら</a>をご覧ください。</p>
+        </div>
+    </div>
+</body>
+</html>
