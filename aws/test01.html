@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>CLF-C02 3点マッチングトレーニング</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      margin: 0;
+      padding: 16px;
+      background: #f5f5f7;
+    }
+    h1 { font-size: 20px; margin-bottom: 8px; }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    select, button { padding: 6px 10px; font-size: 14px; }
+    .hint {
+      font-size: 12px;
+      color: #555;
+      margin-bottom: 12px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .column {
+      background: #ffffff;
+      border-radius: 8px;
+      padding: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    .column-title {
+      font-size: 13px;
+      font-weight: bold;
+      margin-bottom: 6px;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 4px;
+    }
+    .item {
+      border-radius: 6px;
+      padding: 6px;
+      margin-bottom: 6px;
+      border: 1px solid #ddd;
+      font-size: 13px;
+      cursor: pointer;
+      background: #fafafa;
+      position: relative;
+      transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+      user-select: none;
+    }
+    .item:last-child { margin-bottom: 0; }
+    .item:hover { box-shadow: 0 0 0 1px rgba(0,0,0,0.06); }
+    .item.active-question {
+      border-color: #0066ff;
+      box-shadow: 0 0 0 1px rgba(0,102,255,0.4);
+    }
+    .item-linked {
+      color: #111;
+      border-color: transparent;
+    }
+    .badge {
+      position: absolute;
+      top: 4px;
+      right: 6px;
+      font-size: 10px;
+      padding: 1px 4px;
+      border-radius: 999px;
+      background: rgba(0,0,0,0.15);
+      color: #fff;
+    }
+    .result-area { margin-top: 8px; font-size: 13px; }
+    .result-line { margin-bottom: 3px; }
+    .result-line span { display: inline-block; min-width: 22px; }
+    .correct { color: #0a7a20; font-weight: bold; }
+    .wrong { color: #d93025; font-weight: bold; }
+    .footer-note {
+      margin-top: 10px;
+      font-size: 11px;
+      color: #666;
+    }
+    @media (max-width: 800px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <h1>CLF-C02 3点マッチングトレーニング</h1>
+
+  <div class="controls">
+    <label for="setSelect">セット選択：</label>
+    <select id="setSelect">
+      <option value="1">1セット目</option>
+      <option value="2">2セット目</option>
+      <option value="3">3セット目</option>
+      <option value="4">4セット目</option>
+      <option value="5">5セット目</option>
+      <option value="6">6セット目</option>
+      <option value="7">7セット目</option>
+      <option value="8">8セット目</option>
+      <option value="9">9セット目</option>
+      <option value="10">10セット目</option>
+    </select>
+
+    <button id="resetBtn" type="button">このセットをリセット</button>
+    <button id="checkBtn" type="button">このセットを答え合わせ</button>
+  </div>
+
+  <div class="hint">
+    ① 左列の「実現したいこと」をクリックして選択します（青枠）。<br>
+    ② その状態で中央列・右列のBOXをクリックすると、その左列の問題に紐付きます。<br>
+    ③ 各「実現したいこと」ごとに「サービス名」「サービスの役割」を1つずつ選んでから、答え合わせしてください。<br>
+    ※ 「1〜5」「A/B/C/X/Z」「あ〜お」は固定で、各BOXの配置だけがランダムになります。
+  </div>
+
+  <div class="grid">
+    <div class="column">
+      <div class="column-title">実現したいこと（1〜5）</div>
+      <div id="questionsCol"></div>
+    </div>
+    <div class="column">
+      <div class="column-title">サービス名（A/B/C/X/Z）</div>
+      <div id="servicesCol"></div>
+    </div>
+    <div class="column">
+      <div class="column-title">サービスの役割（あ〜お）</div>
+      <div id="rolesCol"></div>
+    </div>
+  </div>
+
+  <div id="resultArea" class="result-area"></div>
+
+  <div class="footer-note">
+    ※ 1問につき「サービス名」「サービスの役割」は1つずつしか紐付けられません（1対1マッチ）。<br>
+    ※ すでに他の問題に紐付いているBOXを選ぶと、そちらの紐付けは上書きされます。
+  </div>
+
+  <script>
+    window.addEventListener("DOMContentLoaded", function () {
+      // セット定義（NGワード除去＋VPC系多め）
+      const sets = {
+        1: {
+          questions: {
+            q1: "1. アプリのログを収集・分析したい",
+            q2: "2. 静的ウェブサイトをホスティングしたい",
+            q3: "3. コンテナを簡単に実行したい",
+            q4: "4. サーバレスでコードを実行したい",
+            q5: "5. 世界中に高速配信したい"
+          },
+          services: {
+            sA: "A. CloudWatch",
+            sB: "B. S3",
+            sC: "C. ECS",
+            sX: "X. Lambda",
+            sZ: "Z. CloudFront"
+          },
+          roles: {
+            rA: "あ. 監視・可視化",
+            rB: "い. オブジェクトストレージ",
+            rC: "う. コンテナ実行基盤",
+            rD: "え. サーバレス実行",
+            rE: "お. CDN配信"
+          },
+          correct: {
+            q1: { service: "sA", role: "rA" },
+            q2: { service: "sB", role: "rB" },
+            q3: { service: "sC", role: "rC" },
+            q4: { service: "sX", role: "rD" },
+            q5: { service: "sZ", role: "rE" }
+          }
+        },
+        2: {
+          questions: {
+            q1: "1. ユーザー認証を簡単に実装したい",
+            q2: "2. RDB をマネージドで利用したい",
+            q3: "3. EC2 を複数AZで冗長化したい",
+            q4: "4. S3に保存したデータをSQLで分析したい",
+            q5: "5. API を簡単に公開したい"
+          },
+          services: {
+            sA: "A. Cognito",
+            sB: "B. RDS",
+            sC: "C. ELB",
+            sX: "X. Athena",
+            sZ: "Z. API Gateway"
+          },
+          roles: {
+            rA: "あ. 認証・ID管理",
+            rB: "い. リレーショナルデータベース",
+            rC: "う. ロードバランサ",
+            rD: "え. サーバレスSQLクエリ",
+            rE: "お. API管理・公開"
+          },
+          correct: {
+            q1: { service: "sA", role: "rA" },
+            q2: { service: "sB", role: "rB" },
+            q3: { service: "sC", role: "rC" },
+            q4: { service: "sX", role: "rD" },
+            q5: { service: "sZ", role: "rE" }
+          }
+        },
+        // VPC系①
+        3: {
+          questions: {
+            q1: "1. アプリ用に論理的に分離されたネットワークを作りたい",
+            q2: "2. EC2インスタンスへのインバウンド・アウトバウンド通信を制御したい",
+            q3: "3. インターネットから直接アクセスできるサブネットを作りたい",
+            q4: "4. プライベートサブネットからインターネットへアウトバウンド通信だけ許可したい",
+            q5: "5. VPCをインターネットに接続したい"
+          },
+          services: {
+            sA: "A. VPC",
+            sB: "B. セキュリティグループ",
+            sC: "C. サブネット",
+            sX: "X. NAT Gateway",
+            sZ: "Z. Internet Gateway"
+          },
+          roles: {
+            rA: "あ. 論理的に分離された仮想ネットワーク",
+            rB: "い. インスタンス単位のステートフルなファイアウォール",
+            rC: "う. VPC内のIPアドレス範囲の分割単位",
+            rD: "え. プライベート側からのインターネット向けアウトバウンド用ゲートウェイ",
+            rE: "お. VPCをインターネットに接続するゲートウェイ"
+          },
+          correct: {
+            q1: { service: "sA", role: "rA" },
+            q2: { service: "sB", role: "rB" },
+            q3: { service: "sC", role: "rC" },
+            q4: { service: "sX", role: "rD" },
+            q5: { service: "sZ", role: "rE" }
+          }
+        },
+        // VPC系②
+        4: {
+          questions: {
+            q1: "1. サブネット単位で許可・拒否ルールを定義したい",
+            q2: "2. VPC内外へのルーティングを制御したい",
+            q3: "3. 異なるVPC同士をプライベートに接続したい",
+            q4: "4. VPCからS3やDynamoDBにインターネットを経由せずプライベート接続したい",
+            q5: "5. VPC内のトラフィック情報をログに残したい"
+          },
+          services: {
+            sA: "A. ネットワークACL",
+            sB: "B. ルートテーブル",
+            sC: "C. VPCピアリング",
+            sX: "X. VPCエンドポイント",
+            sZ: "Z. VPCフローログ"
+          },
+          roles: {
+            rA: "あ. サブネット単位のステートレスなフィルタリング",
+            rB: "い. 宛先ごとに次ホップを定義するルーティングテーブル",
+            rC: "う. 2つのVPC間をプライベートに接続する機能",
+            rD: "え. AWSサービスへのプライベート接続を提供するエンドポイント",
+            rE: "お. VPCのトラフィック情報をCloudWatch Logsなどに記録する機能"
+          },
+          correct: {
+            q1: { service: "sA", role: "rA" },
+            q2: { service: "sB", role: "rB" },
+            q3: { service: "sC", role: "rC" },
+            q4: { service: "sX", role: "rD" },
+            q5: { service: "sZ", role: "rE" }
+          }
+        },
+        5: {
+          questions: {
+            q1: "1. メールをアプリから送信したい",
+            q2: "2. キューで非同期処理にしたい",
+            q3: "3. 複数システムに通知を配信したい",
+            q4: "4. サーバレスでワークフローを実行したい",
+            q5: "5. CI/CDパイプラインを構築したい"
+          },
+          services: {
+            sA: "A. SES",
+            sB: "B. SQS",
+            sC: "C. SNS",
+            sX: "X. Step Functions",
+            sZ: "Z. CodePipeline"
+          },
+          roles: {
+            rA: "あ. メール送信サービス",
+            rB: "い. メッセージキュー",
+            rC: "う. プッシュ通知・Pub/Sub",
+            rD: "え. サーバレスワークフロー実行",
+            rE: "お. 継続的デリバリーパイプライン"
+          },
+          correct: {
+            q1: { service: "sA", role: "rA" },
+            q2: { service: "sB", role: "rB" },
+            q3: { service: "sC", role: "rC" },
+            q4: { service: "sX", role: "rD" },
+            q5: { service: "sZ", role: "rE" }
+          }
+        },
+        // VPC系③（ハイブリッド寄り・NGワード無し）
+        6: {
+          questions: {
+            q1: "1. オンプレミスとAWSをプライベートに接続したい",
+            q2: "2. オンプレミスとの接続トラフィックを安定した帯域で使いたい",
+            q3: "3. オンプレとAWS間のDNS解決を統合したい",
+            q4: "4. プライベートサブネットからオンプレミスへ通信させたい",
+            q5: "5. ハイブリッド構成全体のネットワーク設計を集中管理したい"
+          },
+          services: {
+            sA: "A. AWS Site-to-Site VPN",
+            sB: "B. Direct Connect",
+            sC: "C. Route 53 Resolver",
+            sX: "X. VPCルートテーブル",
+            sZ: "Z. VPC"
+          },
+          roles: {
+            rA: "あ. インターネットVPNでオンプレと接続するサービス",
+            rB: "い. 専用線でオンプレと接続するサービス",
+            rC: "う. ハイブリッド環境で名前解決を統合する機能",
+            rD: "え. オンプレ／VPN／Direct Connectへの経路を定義するルーティング",
+            rE: "お. ハイブリッド構成のAWS側ネットワークの基盤"
+          },
+          correct: {
+            q1: { service: "sA", role: "rA" },
+            q2: { service: "sB", role: "rB" },
+            q3: { service: "sC", role: "rC" },
+            q4: { service: "sX", role: "rD" },
+            q5: { service: "sZ", role: "rE" }
+          }
+        },
+        7: {
+          questions: {
+            q1: "1. イベント駆動で処理を起動したい",
+            q2: "2. 高速なNoSQLデータベースを使いたい",
+            q3: "3. 機械学習の推論APIを簡単に公開したい",
+            q4: "4. モバイルアプリとバックエンドAPIを一括でホスティングしたい",
+            q5: "5. EC2のパッチ適用や運用を自動化したい"
+          },
+          services: {
+            sA: "A. EventBridge",
+            sB: "B. DynamoDB",
+            sC: "C. API Gateway",
+            sX: "X. Lambda",
+            sZ: "Z. Systems Manager"
+          },
+          roles: {
+            rA: "あ. イベントバス・ルーティング",
+            rB: "い. フルマネージドNoSQL",
+            rC: "う. REST/HTTP APIを公開するフロントサービス",
+            rD: "え. サーバレス実行基盤として推論処理などを実行",
+            rE: "お. パッチ適用やオートメーションを行う運用サービス"
+          },
+          correct: {
+            q1: { service: "sA", role: "rA" },
+            q2: { service: "sB", role: "rB" },
+            q3: { service: "sC", role: "rC" },
+            q4: { service: "sX", role: "rD" },
+            q5: { service: "sZ", role: "rE" }
+          }
+        },
+        8: {
+          questions: {
+            q1: "1. コンテナバッチ処理を実行したい",
+            q2: "2. VPC内のインスタンスにSSHポートを開けずに接続したい",
+            q3: "3. 構造化データを分析用DWHに集約したい",
+            q4: "4. 分析用のダッシュボードを作成したい",
+            q5: "5. ファイルをオンラインで共有したい（社内向け）"
+          },
+          services: {
+            sA: "A. Batch",
+            sB: "B. SSM Session Manager",
+            sC: "C. Redshift",
+            sX: "X. QuickSight",
+            sZ: "Z. Amazon FSx for Windows File Server"
+          },
+          roles: {
+            rA: "あ. コンテナ／ジョブベースのバッチ実行基盤",
+            rB: "い. エージェント経由でのSSH不要なリモートシェル",
+            rC: "う. DWH・分析用データベース",
+            rD: "え. BI・ダッシュボード作成サービス",
+            rE: "お. Windowsベースのファイル共有サービス"
+          },
+          correct: {
+            q1: { service: "sA", role: "rA" },
+            q2: { service: "sB", role: "rB" },
+            q3: { service: "sC", role: "rC" },
+            q4: { service: "sX", role: "rD" },
+            q5: { service: "sZ", role: "rE" }
+          }
+        },
+        9: {
+          questions: {
+            q1: "1. マイクロサービス間を疎結合に連携したい",
+            q2: "2. REST API を構築・管理したい",
+            q3: "3. APIやコンソール操作の履歴を記録したい",
+            q4: "4. アプリケーションログを集中管理したい",
+            q5: "5. 静的サイトをグローバル配信したい"
+          },
+          services: {
+            sA: "A. EventBridge",
+            sB: "B. API Gateway",
+            sC: "C. CloudTrail",
+            sX: "X. CloudWatch Logs",
+            sZ: "Z. CloudFront"
+          },
+          roles: {
+            rA: "あ. イベント連携基盤",
+            rB: "い. API公開・管理",
+            rC: "う. 監査ログ取得",
+            rD: "え. ログの収集・保存・検索",
+            rE: "お. CDN・エッジ配信"
+          },
+          correct: {
+            q1: { service: "sA", role: "rA" },
+            q2: { service: "sB", role: "rB" },
+            q3: { service: "sC", role: "rC" },
+            q4: { service: "sX", role: "rD" },
+            q5: { service: "sZ", role: "rE" }
+          }
+        },
+        10: {
+          questions: {
+            q1: "1. Webアプリの攻撃から防御したい",
+            q2: "2. DBの負荷状況をメトリクスとして可視化したい",
+            q3: "3. S3へのアクセス権限を制御したい",
+            q4: "4. S3のストレージコストを最適化したい",
+            q5: "5. RDSの自動バックアップとマルチAZで可用性を高めたい"
+          },
+          services: {
+            sA: "A. WAF",
+            sB: "B. CloudWatch",
+            sC: "C. IAM",
+            sX: "X. S3",
+            sZ: "Z. RDS"
+          },
+          roles: {
+            rA: "あ. Webアプリケーションをレイヤ7で防御するサービス",
+            rB: "い. CPUなどDB関連メトリクスを可視化する監視サービス",
+            rC: "う. ユーザー・ロール・ポリシーで権限を管理するサービス",
+            rD: "え. ライフサイクルポリシーで階層化・コスト最適化するストレージ",
+            rE: "お. マルチAZや自動バックアップを提供するRDBサービス"
+          },
+          correct: {
+            q1: { service: "sA", role: "rA" },
+            q2: { service: "sB", role: "rB" },
+            q3: { service: "sC", role: "rC" },
+            q4: { service: "sX", role: "rD" },
+            q5: { service: "sZ", role: "rE" }
+          }
+        }
+      };
+
+      const colorMap = {
+        q1: "#e3f2fd",
+        q2: "#e8f5e9",
+        q3: "#fff3e0",
+        q4: "#f3e5f5",
+        q5: "#ffebee"
+      };
+
+      let currentSet = 1;
+      let activeQuestionId = null;
+      let answerMap = {};
+
+      const questionsCol = document.getElementById("questionsCol");
+      const servicesCol  = document.getElementById("servicesCol");
+      const rolesCol     = document.getElementById("rolesCol");
+      const resultArea   = document.getElementById("resultArea");
+      const setSelect    = document.getElementById("setSelect");
+      const resetBtn     = document.getElementById("resetBtn");
+      const checkBtn     = document.getElementById("checkBtn");
+
+      function shuffle(array) {
+        const arr = array.slice();
+        for (let i = arr.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+      }
+
+      function clearColumns() {
+        questionsCol.innerHTML = "";
+        servicesCol.innerHTML = "";
+        rolesCol.innerHTML = "";
+      }
+
+      function renderSet(setNo) {
+        const data = sets[setNo];
+        if (!data) return;
+
+        clearColumns();
+        answerMap = {};
+        activeQuestionId = null;
+        resultArea.innerHTML = "";
+
+        // 実現したいこと（1〜5）は順番固定で表示
+        Object.entries(data.questions).forEach(([qId, text]) => {
+          const div = document.createElement("div");
+          div.className = "item";
+          div.textContent = text;
+          div.dataset.type = "question";
+          div.dataset.id = qId;
+          questionsCol.appendChild(div);
+        });
+
+        // サービス名・役割は配置だけランダム
+        const sEntries = shuffle(Object.entries(data.services));
+        const rEntries = shuffle(Object.entries(data.roles));
+
+        sEntries.forEach(([sId, text]) => {
+          const div = document.createElement("div");
+          div.className = "item";
+          div.textContent = text;
+          div.dataset.type = "service";
+          div.dataset.id = sId;
+          servicesCol.appendChild(div);
+        });
+
+        rEntries.forEach(([rId, text]) => {
+          const div = document.createElement("div");
+          div.className = "item";
+          div.textContent = text;
+          div.dataset.type = "role";
+          div.dataset.id = rId;
+          rolesCol.appendChild(div);
+        });
+
+        bindEvents();
+      }
+
+      function bindEvents() {
+        document.querySelectorAll(".item").forEach(el => {
+          el.addEventListener("click", () => {
+            const type = el.dataset.type;
+            const id = el.dataset.id;
+
+            if (type === "question") {
+              const same = (activeQuestionId === id);
+              document
+                .querySelectorAll('.item[data-type="question"]')
+                .forEach(q => q.classList.remove("active-question"));
+              activeQuestionId = same ? null : id;
+              if (!same) {
+                el.classList.add("active-question");
+              }
+            } else {
+              if (!activeQuestionId) return;
+              const qId = activeQuestionId;
+              if (!answerMap[qId]) {
+                answerMap[qId] = { service: null, role: null };
+              }
+              const isService = (type === "service");
+              const isRole = (type === "role");
+
+              Object.entries(answerMap).forEach(([otherQ, ans]) => {
+                if (isService && ans.service === id && otherQ !== qId) {
+                  ans.service = null;
+                }
+                if (isRole && ans.role === id && otherQ !== qId) {
+                  ans.role = null;
+                }
+              });
+
+              if (isService) {
+                answerMap[qId].service =
+                  (answerMap[qId].service === id) ? null : id;
+              } else if (isRole) {
+                answerMap[qId].role =
+                  (answerMap[qId].role === id) ? null : id;
+              }
+
+              updateLinkedVisual();
+            }
+          });
+        });
+      }
+
+      function updateLinkedVisual() {
+        document.querySelectorAll(".item").forEach(el => {
+          if (!el.classList.contains("active-question")) {
+            el.style.backgroundColor = "#fafafa";
+          }
+          el.classList.remove("item-linked");
+          el.style.boxShadow = "";
+          const badge = el.querySelector(".badge");
+          if (badge) badge.remove();
+        });
+
+        Object.entries(answerMap).forEach(([qId, ans]) => {
+          const color = colorMap[qId] || "#e0f7fa";
+          const qEl = document.querySelector(
+            '.item[data-type="question"][data-id="' + qId + '"]'
+          );
+          if (qEl) {
+            qEl.style.backgroundColor = color;
+            qEl.classList.add("item-linked");
+          }
+
+          if (ans.service) {
+            const sEl = document.querySelector(
+              '.item[data-type="service"][data-id="' + ans.service + '"]'
+            );
+            if (sEl) {
+              sEl.style.backgroundColor = color;
+              sEl.classList.add("item-linked");
+              addBadge(sEl, qId);
+            }
+          }
+          if (ans.role) {
+            const rEl = document.querySelector(
+              '.item[data-type="role"][data-id="' + ans.role + '"]'
+            );
+            if (rEl) {
+              rEl.style.backgroundColor = color;
+              rEl.classList.add("item-linked");
+              addBadge(rEl, qId);
+            }
+          }
+        });
+      }
+
+      function addBadge(el, qId) {
+        const existing = el.querySelector(".badge");
+        if (existing) existing.remove();
+        const badge = document.createElement("div");
+        badge.className = "badge";
+        const idx = parseInt(qId.replace("q", ""), 10);
+        badge.textContent = idx;
+        el.appendChild(badge);
+      }
+
+      function checkAnswers() {
+        const data = sets[currentSet];
+        const correct = data.correct;
+        let html = "";
+
+        Object.entries(data.questions).forEach(([qId]) => {
+          const num = qId.replace("q", "");
+          const ans = answerMap[qId] || { service: null, role: null };
+          const expected = correct[qId];
+          const okService = (ans.service === expected.service);
+          const okRole = (ans.role === expected.role);
+          const ok = okService && okRole;
+
+          const serviceLabel = data.services[expected.service];
+          const roleLabel = data.roles[expected.role];
+
+          if (ok) {
+            html +=
+              '<div class="result-line"><span>' +
+              num +
+              '.</span> <span class="correct">○ 正解</span></div>';
+          } else {
+            html +=
+              '<div class="result-line"><span>' +
+              num +
+              '.</span> <span class="wrong">× 不正解</span> 正解：' +
+              serviceLabel +
+              " / " +
+              roleLabel +
+              "</div>";
+          }
+
+          const qEl = document.querySelector(
+            '.item[data-type="question"][data-id="' + qId + '"]'
+          );
+          if (qEl) {
+            qEl.style.boxShadow = ok
+              ? "0 0 0 1px rgba(10,122,32,0.6)"
+              : "0 0 0 1px rgba(217,48,37,0.6)";
+          }
+        });
+
+        resultArea.innerHTML = html;
+      }
+
+      setSelect.addEventListener("change", () => {
+        currentSet = parseInt(setSelect.value, 10);
+        renderSet(currentSet);
+      });
+
+      resetBtn.addEventListener("click", () => {
+        renderSet(currentSet); // リセット時もサービス名・役割の配置を再ランダム
+      });
+
+      checkBtn.addEventListener("click", () => {
+        checkAnswers();
+      });
+
+      renderSet(currentSet);
+    });
+  </script>
+</body>
+</html>
