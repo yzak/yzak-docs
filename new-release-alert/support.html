@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>サポート - 技術書新刊アラート</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.8;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+        }
+        h1 {
+            color: #0b6e4f;
+            border-bottom: 2px solid #0b6e4f;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #555;
+            margin-top: 30px;
+        }
+        .app-info {
+            background-color: #eef8f4;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        .faq-item {
+            margin-bottom: 25px;
+        }
+        .faq-question {
+            font-weight: bold;
+            color: #0b6e4f;
+            margin-bottom: 10px;
+        }
+        .contact-info {
+            background-color: #f3faf7;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+        }
+        ul {
+            padding-left: 25px;
+        }
+        li {
+            margin-bottom: 10px;
+        }
+        a {
+            color: #0b6e4f;
+        }
+    </style>
+</head>
+<body>
+    <h1>技術書新刊アラート - サポート</h1>
+
+    <div class="app-info">
+        <h2>アプリについて</h2>
+        <p>「技術書新刊アラート」は、エンジニア向け技術書の新刊情報を一覧・タグ別に確認できるアプリです。ユーザーは興味のあるタグを購読し、毎週のローカル通知で新刊を確認できます。</p>
+        <p><strong>主な機能：</strong></p>
+        <ul>
+            <li>技術書新刊一覧の表示</li>
+            <li>タグ絞り込み</li>
+            <li>書籍詳細画面での情報確認</li>
+            <li>購読タグ設定</li>
+            <li>ローカル通知設定</li>
+            <li>Amazon商品ページへの外部ブラウザ遷移</li>
+        </ul>
+    </div>
+
+    <h2>よくある質問</h2>
+
+    <div class="faq-item">
+        <div class="faq-question">Q1. 書籍データはどこから取得していますか？</div>
+        <p>GitHub Pages 上で公開している書籍JSONを取得して表示しています。データの生成元は Amazon の公式APIを前提としたバックエンドです。</p>
+    </div>
+
+    <div class="faq-item">
+        <div class="faq-question">Q2. 通知はいつ判定されますか？</div>
+        <p>通知判定はアプリ起動時または手動更新時に行います。通知時刻にネットワークへアクセスして判定するのではなく、取得済みデータをもとにローカル通知を予約します。</p>
+    </div>
+
+    <div class="faq-item">
+        <div class="faq-question">Q3. Amazonへのリンクはアプリ内ブラウザですか？</div>
+        <p>いいえ。Amazonの商品ページは外部ブラウザで開きます。アプリ内ではまず書籍詳細を確認できます。</p>
+    </div>
+
+    <div class="faq-item">
+        <div class="faq-question">Q4. 書籍が表示されないことがあります。</div>
+        <p>データ更新タイミングや対象タグ、公開JSONの内容によっては、新刊がない期間があります。手動更新を試しても表示が変わらない場合は、配信データ側に新しい対象書籍がまだ含まれていない可能性があります。</p>
+    </div>
+
+    <div class="faq-item">
+        <div class="faq-question">Q5. どの情報が端末に保存されますか？</div>
+        <p>購読タグ、通知設定、前回取得済み書籍ID、書籍JSONキャッシュなどを端末内に保存します。ログイン情報や課金情報は扱いません。</p>
+    </div>
+
+    <div class="contact-info">
+        <h2>お問い合わせ</h2>
+        <p>不具合報告やご質問は、以下までご連絡ください。</p>
+        <p>メール: <a href="mailto:yasuo1979@gmail.com">yasuo1979@gmail.com</a></p>
+    </div>
+</body>
+</html>
