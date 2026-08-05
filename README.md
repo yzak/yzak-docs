@@ -8,6 +8,9 @@ This repository contains documentation, support pages, and privacy policies for 
 - [Support Page](https://yzak.github.io/yzak-docs/simple-counter-app/)
 - [Privacy Policy](https://yzak.github.io/yzak-docs/simple-counter-app/privacy.html)
 
+### 新刊通知（shinkan-notifier）
+- [Privacy Policy](https://yzak.github.io/yzak-docs/shinkan-notifier/privacy-policy.html)
+
 ## Structure
 
 ```
